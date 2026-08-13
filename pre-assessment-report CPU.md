@@ -10,8 +10,7 @@ Summary: Pre-assessment report template document
 ## Assessment objective
 
 An external submission of x3d2 ([github](https://github.com/xcompact3d/x3d2/), commit 84c750f38af041661852dc35858c879293146db6 `Faster OpenMP Reorder and Accumulation Kernels (#329)`) was made on the 8th of July 2026 to the SHAREing team at Durham.
-This assessment is performed by Emily Wilkinson of Durham University on the 8th of July 2026.
-
+This assessment is performed by Emily Wilkinson of Durham University between the 8th of July 2026 and the 13th of August 2026.
 
 ## Disclaimers
 
@@ -20,13 +19,13 @@ This assessment is performed by Emily Wilkinson of Durham University on the 8th 
 
 ## Table of contents
 
-- [ ] [1: Benchmark setup](#1-benchmark-setup)
-- [ ] [2: Description of working environment](#2-description-of-working-environment)
-- [ ] [3: Compiler setup and optimisations](#3-compiler-setup-and-optimisations)
-- [ ] [4: Computational complexity and scaling](#4-computational-complexity-and-scaling)
-- [ ] [5: Memory, storage and I/O](#5-memory-storage-and-io)
-- [ ] [6: Additional comments from submitter](#6-additional-comments-from-submitter)
-- [ ] [7: Pre-assessment outcome](#7-pre-assessment-outcome)
+- [1: Benchmark setup](#1-benchmark-setup)
+- [2: Description of working environment](#2-description-of-working-environment)
+- [3: Compiler setup and optimisations](#3-compiler-setup-and-optimisations)
+- [4: Computational complexity and scaling](#4-computational-complexity-and-scaling)
+- [5: Memory, storage and I/O](#5-memory-storage-and-io)
+- [6: Additional comments from submitter](#6-additional-comments-from-submitter)
+- [7: Pre-assessment outcome](#7-pre-assessment-outcome)
 
 ## 1: Benchmark setup
 
@@ -138,7 +137,7 @@ No compiler or library versions were specified and therefore a set which success
 
 ## 4: Computational complexity and scaling
 
-### Submitted comments (copied direct from form)
+### Submitted comments copied direct from form
 
 The main problem-size parameter is dims_global = Nx, Ny, Nz. For cubic cases, increasing N from 256 to 512 increases the number of grid cells by 8x.
 
@@ -172,27 +171,42 @@ For GPU benchmarks, start with:
 
 ## 5: Memory, storage and I/O
 
->[!IMPORTANT]
-> Comment on the expected in memory size of the program at runtime, including data. An estimate of this information should be provided as part of the submission. For jobs submitted to Hamilton as part of early assessment, the Hamilton dashboard can be used to gauge memory usage (see [Hamilton Portal Performance](https://www.durham.ac.uk/research/institutes-and-centres/advanced-research-computing/hamilton-supercomputer/usage/portal/performance/)).
+A test run of the program indicates that 4.58 GB of RAM was used for a default (256x256x256) sized run with 8 ranks decomposed 1, 2, 4 over 3000 iterations.
 
-4.58 GB
-
->[!IMPORTANT]
-> Comment on the expected storage requirements of the program, are there large amounts of temporary files (either in quantity or in total size)? An estimate of this information should be provided as part of the submission. A program that produces a large amount of temporary checkpoint files should have checkpoints turned off where possible.
-
-The benchmark also outputs files totalling `0.02`MB.
-
->[!IMPORTANT]
-> Comment on the expected output, including when the I/O is performed, and your observations when running the benchmark. This output should be minimal when testing the working performance of the program rather than the I/O saturation. Excessive I/O will result in an inaccurate performance assessment and may result in rejection.
-
-The benchmark writes to the console output every `<n>` iterations [as indicated by the submitter](#fetch-and-run-benchmark).
+The benchmark writes to the console output every 100 iterations [as indicated by the submitter](#fetch-and-run-benchmark).
+The benchmark also outputs files totalling 0.02 MB for a run with 3000 iterations.
+These can be disabled by setting
+```
+n_output = 0
+checkpoint_freq = 0
+snapshot_freq = 0
+keep_checkpoint = F
+restart_from_checkpoint = F
+```
+or enabled for an I/O assessment run with
+```
+n_output = 10
+checkpoint_freq = 100
+snapshot_freq = 100
+keep_checkpoint = T
+```
 
 ## 6: Additional comments from submitter
 
->[!IMPORTANT]
-> Include any additional information from the submitter that does not fit the previous sections.
+### Submitted comments copied direct from form
+
+The submitted Taylor-Green vortex benchmark is intended primarily as a performance benchmark for x3d2 rather than a full physics-validation submission. It exercises the main computational patterns of the code: compact finite-difference operators, pressure projection/Poisson solve, MPI communication/domain decomposition, OpenMP CPU execution, CUDA GPU execution, and optional ADIOS2 I/O.
+
+The primary quantity of interest is the timestep loop performance, excluding or at least separating initial setup where possible.
+
+x3d2 prints timing information including averaged time per timestep. This is the preferred metric for solver performance because it focuses on the repeated compute phase rather than one-off setup costs.
+
+For most performance comparisons, please report:
+- total wall time for the full run
+- averaged time per step
+- number of iterations
+- backend and parallel configuration
 
 ## 7: Pre-assessment outcome
 
->[!IMPORTANT]
-> Indicate whether the assessment will proceed to the high-level stage. If the assessment is rejected here, comment on why and how to proceed.
+The submitted program is suitable to proceed to a high-level assessment.
