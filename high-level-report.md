@@ -14,7 +14,7 @@ As per the conclusions of the [pre-assessment]("pre-assessment-report-CPU.md"), 
 - [x] [Core-level assessment](#core-level-assessment)
 - [x] [Intra-node assessment](#intra-node-assessment)
 - [x] [Inter-node assessment](#inter-node-assessment)
-- [x] [GPU/accelerator assessment](#gpu-assessment) (Pending pre-assessment)
+- [ ] [GPU/accelerator assessment](#gpu-assessment) (Pending pre-assessment)
 - [x] [I/O assessment](#io-assessment)
 
 We provide brief explanations of the high-level metrics in their relevant sections. However, for a more detailed description, please refer to Chapter 5 in the [performance assessment guidebook](https://shareing-dri.github.io/assets/pdfs/perf_analysis_workbook_brief.pdf).
@@ -25,7 +25,7 @@ As the code was [successfully compiled on Hamilton](pre-assessment-report-CPU.md
 
 ### Programming model
 
-The compiled code uses a hybrid MPI and OpenMP model for both intra-node and inter-node runs. The submitter indicated several options for configuring the MPI ranks and threads without any indicated preference. We noted that for MPI-only runs, where the number of MPI ranks matches the number of cores, the runs ended in segmentation faults for over 32 ranks:
+The compiled code uses a hybrid MPI and OpenMP model for both intra-node and inter-node runs. The submitter indicated several options for configuring the MPI ranks and threads without any indicated preference. We noted that for MPI-only runs, where the number of MPI ranks matches the number of cores, runs with 32 ranks and over ended in segmentation faults:
 
 ```bash
 Caught signal 11 (Segmentation fault: address not mapped to object at address $(ADDRESS)
@@ -48,6 +48,14 @@ All analyses were performed on an exclusive node on Hamilton with 64 GB memory r
 ```
 
 For intra-node runs, the `--ntasks-per-node` and `--cpus-per-task` values are set to the number of MPI ranks and OpenMP threads respectively. For inter-node runs, the `--nodes` value is varied.
+
+MPI ranks are distributed in a `block:block` configuration. The following directives were used for OpenMP thread distribution:
+
+```bash
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK # Set with --cpus-per-task
+export OMP_PLACES=cores
+export OMP_PROC_BIND=close
+```
 
 ### Base input
 
@@ -118,9 +126,9 @@ Based on these results, we determined that this software has a score of $C^{core
 
 | Peak FLOPS proportion | Description | Score |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| $C_{core} \ge$ 0.8 | <span style="background-color: #0080005f">Core compute performance is good.</span> | |
-| 0.8 $\gt C_{core} \ge$ 0.6 | <span style="background-color: #ffff005c">Core performance is not effectively using the hardware to its maximum potential.</span> | |
-| 0.6 $\gt C_{core}$ | <span style="background-color: #ff00004e">Core performance is poor.</span> | $C_{core} \approx$ 0.431
+| $C_{core} \ge$ 0.8 | <span style="background-color: #0080005f">Core performance does not require further analysis.</span> | |
+| 0.8 $\gt C_{core} \ge$ 0.6 | <span style="background-color: #ffff005c">Core performance may require further analysis as it may not be effectively using the hardware to its maximum potential.</span> | |
+| 0.6 $\gt C_{core}$ | <span style="background-color: #ff00004e">Core performance requires in-depth analysis.</span> | $C_{core} \approx$ 0.431
 
 The metric shows that the code achieves less than 60% of a single core's peak performance, indicating that this aspect requires deeper analysis.
 
@@ -141,7 +149,7 @@ For a high-level analysis of the intra-node performance, we perform a strong sca
 
 <img src='images/intranode.png' width=500 alt="Intranode performance"/>
 
-The parallel efficiency shows a steep drop from 1 to 16 cores, levelling from 32 to 128 cores around 16 to 18%. The 80% threshold is at 1 core and the 60% threshold is at 2 cores. As a proportion of the number of cores available on the node i.e. 128, the scores are:
+The parallel efficiency shows a steep drop from 1 to 16 cores, levelling around 16 to 18% from 32 to 128 cores. The 80% threshold is at 1 core and the 60% threshold is at 2 cores. As a proportion of the number of cores available on the node i.e. 128, the scores are:
 
 $$
 C^{80\%}_{intra}=\frac{p^{80\%}_{critical,intra}}{p_{max,intra}}=\frac{1}{128}=0.78125\%
@@ -153,11 +161,11 @@ $$
 
 | Efficiency                                                 | Description | Score |
 | ---------------------------------------------------------- | ----------- | ----- |
-| $C^{80\%}_{intra} \ge$ 0.8                                 | <span style="background-color: #0080005f">Shared memory scaling is good.</span> ||
-| $C^{80\%}_{intra} \lt$ 0.8 ^ $C^{60\%}_{intra} \ge$ 0.6    | <span style="background-color: #ffff005c">Shared memory scaling is not particularly good, and we notably might run into problems with the next generation of chips where the core count will increase.</span> ||
-| otherwise                                                  | <span style="background-color: #ff00004e">Shared memory scaling is poor.</span> |$C^{80\%}_{intra} \approx$ 1.78 $\times$ 10<sup>-3</sup> & $C^{60\%}_{intra} \approx$ 1.56 $\times$ 10<sup>-2</sup>|
+| $C^{80\%}_{intra} \ge$ 0.8                                 | <span style="background-color: #0080005f">Shared memory scaling does not require further analysis.</span> ||
+| $C^{80\%}_{intra} \lt$ 0.8 ^ $C^{60\%}_{intra} \ge$ 0.6    | <span style="background-color: #ffff005c">Shared memory scaling may require analysis; scaling performance may be impacted when porting to newer chips with more cores.</span> ||
+| otherwise                                                  | <span style="background-color: #ff00004e">Shared memory scaling requires in-depth analysis.</span> |$C^{80\%}_{intra} \approx$ 1.78 $\times$ 10<sup>-3</sup> & $C^{60\%}_{intra} \approx$ 1.56 $\times$ 10<sup>-2</sup>|
 
-Based on the classification of the metrics and observations from the parallel efficiency plot, the code demonstrates unfavourable scaling on shared memory within a node. The intra-node performance is therefore a candidate for further analysis.
+Based on the classification of the metrics and observations from the parallel efficiency plot, the code demonstrates unfavourable scaling within a node. The intra-node performance therefore requires further investigation.
 
 ## Inter-node assessment
 
@@ -181,11 +189,11 @@ For 1 to 7 nodes on Hamilton, the parallel efficiency was never below 60% or 80%
 
 | Efficiency | Description | Score |
 | ---------- | ----------- | ----- |
-| $C^{80\%}_{inter} \ge$ 0.8 $.C_{inter}$ ^ $C^{80\%}_{inter} + C^{60\%}_{inter}=C_{inter}$ | <span style="background-color: #0080005f">Distributed memory scaling is good.</span> | $C^{80\%}_{inter}=$ 1.00 |
-| $C^{60\%}_{intra} \ge$ 0.6 $.C_{inter}$ | <span style="background-color: #ffff005c">Distributed memory scaling is not particularly good.</span> | |
-| otherwise | <span style="background-color: #ff00004e">Distributed memory scaling is poor.</span> | |
+| $C^{80\%}_{inter} \ge$ 0.8 $.C_{inter}$ ^ $C^{80\%}_{inter} + C^{60\%}_{inter}=C_{inter}$ | <span style="background-color: #0080005f">Distributed memory scaling does not require further analysis.</span> | $C^{80\%}_{inter}=$ 1.00 |
+| $C^{60\%}_{intra} \ge$ 0.6 $.C_{inter}$ | <span style="background-color: #ffff005c">Distributed memory scaling may require further analysis.</span> | |
+| otherwise | <span style="background-color: #ff00004e">Distributed memory scaling requires in-depth analysis.</span> | |
 
-As the inter-node performance of the code demonstrated favourable scaling, this aspect may not require further analysis.
+As the inter-node performance of the code demonstrated favourable scaling for the configuration analysis, this aspect does not require immediate attention.
 
 ## GPU Assessment
 
@@ -217,11 +225,11 @@ $$
 
 | I/O proportion | Description | Score |
 | -------------- | ----------- | ----- |
-| $C_{I/O} \ge$ 0.8 | <span style="background-color: #0080005f">I/O does not dominate runtime.</span> | $C_{I/O} \approx 1.00$
-| 0.8 $\gt C_{I/O} \ge$ 0.6 | <span style="background-color: #ffff005c">I/O forms a significant part of the total runtime.</span> |
-| 0.6 $\gt C_{I/O}$ | <span style="background-color: #ff00004e">I/O dominates the runtime.</span>
+| $C_{I/O} \ge$ 0.8 | <span style="background-color: #0080005f">I/O does not require further analysis.</span> | $C_{I/O} \approx 1.00$
+| 0.8 $\gt C_{I/O} \ge$ 0.6 | <span style="background-color: #ffff005c">I/O forms a significant part of the total runtime and may require further analysis.</span> |
+| 0.6 $\gt C_{I/O}$ | <span style="background-color: #ff00004e">I/O requires in-depth analysis.</span>
 
-The metric indicates that the I/O has minimal impact on the runtime and does not require further analysis.
+The metric indicates that for the given input the I/O has minimal impact on the runtime and so does not need to be addressed.
 
 ## Summary
 
@@ -229,14 +237,14 @@ The following table collates the results of all above sections. These scores are
 
 | Result | Score | Metric result |
 | ---------------- | - | - |
-| CPU | 0.43 | 3832.79 MFLOPS |
-| GPU | - | - |
-| I/O | 1.00 | 2.51 $\times$ 10<sup>-7</sup> |
-| Intra-node (80%) | 1.78 $\times$ 10<sup>-3</sup> | 1 core |
-| Inter-node (80%) | 1.00 | 7 nodes |
+| [Core](#core-level-assessment) | 0.43 | 3832.79 MFLOPS |
+| [Intra-node (80%)](#intra-node-assessment) | 1.78 $\times$ 10<sup>-3</sup> | 1 core |
+| [Inter-node (80%)](#inter-node-assessment) | 1.00 | 7 nodes |
+| [GPU](#gpu-assessment) | - | - |
+| [I/O](#io-assessment) | 1.00 | 2.51 $\times$ 10<sup>-7</sup> |
 
 <img src='images/summary.png' width=500 alt="Summary"/>
 
 ## High-level assessment outcome
 
-Based on the scores assigned, the [core compute performance](#core-level-assessment) and the [intra-node performance](#intra-node-assessment) are candidates for further investigation to improve the code's performance. We note that varying the `nproc_dir` parameter, or the assignment of MPI ranks and OpenMP threads may have a meaningful impact on the performance. While their assessment is out-of-scope for the high-level assessment, their analysis should be included in lower-level assessments.
+Based on the scores assigned, the [core-level performance](#core-level-assessment) and the [intra-node performance](#intra-node-assessment) may be inhibiting the performance of the code. These aspects are therefore candidates for further investigation in a lower-level analysis. We note that varying the `nproc_dir` parameter, other inputs such as `-n_iters` or the assignment of MPI ranks and OpenMP threads may have a meaningful impact on the performance. While their assessment is out-of-scope for the high-level assessment, their analysis should be included in lower-level assessments.
