@@ -9,7 +9,7 @@ Summary: High-level assessment report template
 
 As per the conclusions of the [pre-assessment](pre-assessment-report-CPU.md), the high-level assessment was performed by Ananya Gangopadhyay between the 1st and 21st of September 2026.
 
- The submitter had specified that out of the five performance dimensions, the ones relevant to this assessment and benchmark are:
+The submitter has specified that out of the five performance dimensions, the ones relevant to this assessment and benchmark are:
 
 - [x] [Core-level assessment](#core-level-assessment)
 - [x] [Intra-node assessment](#intra-node-assessment)
@@ -130,7 +130,7 @@ Based on these results, we determined that this software has a score of $C^{core
 | 0.8 $\gt C_{core} \ge$ 0.6 | <span style="background-color: #ffff005c">Core performance may require further analysis as it may not be effectively using the hardware to its maximum potential.</span> | |
 | 0.6 $\gt C_{core}$ | <span style="background-color: #ff00004e">Core performance requires in-depth analysis.</span> | $C_{core} \approx$ 0.431
 
-The metric shows that the code achieves less than 60% of a single core's peak performance, indicating that this aspect requires deeper analysis.
+The metric shows that the code achieves less than 60% of a single core's achievable peak performance, indicating that this aspect requires deeper analysis.
 
 ## Intra-node assessment
 
@@ -173,16 +173,16 @@ The inter-node performance is measured using a combination of strong and weak sc
 
 For the initial problem size on one node, `dims_global` was set to `512, 512, 512`. The runs were configured to have 8 MPI ranks per node (1 per NUMA domain) and 16 threads per rank. The total number of ranks used is `num_ranks_per_node x num_nodes`, which is used to set the `nproc_dir` parameter.
 
-| Nodes | Time (s) | Ranks | Threads per rank | Parallel efficiency (%) |
-| ----- | -------- | ----- | ---------------- | ----------------------- |
-| 1     | 2781.01  | 8     | 16               | 1                       |
-| 2     | 1477.58  | 16    | 16               | 0.94                    |
-| 3     | 1004.73  | 24    | 16               | 0.92                    |
-| 4     | 783.27   | 32    | 16               | 0.89                    |
-| 5     | 606.35   | 40    | 16               | 0.92                    |
-| 6     | 523.3    | 48    | 16               | 0.89                    |
-| 7     | 475.06   | 56    | 16               | 0.84                    |
-| 8     | 409.24   | 64    | 16               | 0.85                    |
+| Nodes | Ranks | Threads per rank | Time (s) | Parallel efficiency (%) |
+| ----- | ----- | ---------------- | -------- | ----------------------- |
+| 1     | 8     | 16               | 2781.01  | 1                       |
+| 2     | 16    | 16               | 1477.58  | 0.94                    |
+| 3     | 24    | 16               | 1004.73  | 0.92                    |
+| 4     | 32    | 16               | 783.27   | 0.89                    |
+| 5     | 40    | 16               | 606.35   | 0.92                    |
+| 6     | 48    | 16               | 523.3    | 0.89                    |
+| 7     | 56    | 16               | 475.06   | 0.84                    |
+| 8     | 64    | 16               | 409.24   | 0.85                    |
 
 <img src='images/internode.png' width=500 alt="Internode performance"/>
 
@@ -248,4 +248,4 @@ The following table collates the results of all above sections. These scores are
 
 ## High-level assessment outcome
 
-Based on the scores assigned, the [core-level performance](#core-level-assessment) and the [intra-node performance](#intra-node-assessment) may be inhibiting the performance of the code. These aspects are therefore candidates for further investigation in a lower-level analysis. We note that varying the `nproc_dir` parameter, other inputs such as `-n_iters` or the assignment of MPI ranks and OpenMP threads may have a meaningful impact on the performance. While their assessment is out-of-scope for the high-level assessment, their analysis should be included in lower-level assessments.
+Based on the scores assigned, the [core-level performance](#core-level-assessment) and the [intra-node performance](#intra-node-assessment) may be inhibiting the performance of the code. These aspects are therefore candidates for further investigation in a lower-level analysis. We note that varying the `nproc_dir` parameter, other inputs such as `n_iters` or the assignment of MPI ranks and OpenMP threads may have a meaningful impact on the performance. While their assessment is out-of-scope for the high-level assessment, their analysis should be included in lower-level assessments.
