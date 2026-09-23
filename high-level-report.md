@@ -7,7 +7,7 @@ Summary: High-level assessment report template
 
 # High-level performance assessment report of `x3d2`
 
-As per the conclusions of the [pre-assessment]("pre-assessment-report-CPU.md"), the high-level assessment was performed by Ananya Gangopadhyay between the 1st and 21st of September 2026.
+As per the conclusions of the [pre-assessment](pre-assessment-report-CPU.md), the high-level assessment was performed by Ananya Gangopadhyay between the 1st and 21st of September 2026.
 
  The submitter had specified that out of the five performance dimensions, the ones relevant to this assessment and benchmark are:
 
@@ -21,7 +21,7 @@ We provide brief explanations of the high-level metrics in their relevant sectio
 
 ## Setup Details
 
-As the code was [successfully compiled on Hamilton](pre-assessment-report-CPU.md/#2-description-of-working-environment) during the pre-assessment, the system was used for the high-level assessment as well using the setup, compilers and modules described [there](pre-assessment-report-CPU.md/#3-compiler-setup-and-optimisations).
+As the code was [successfully compiled on Hamilton](pre-assessment-report-CPU.md#2-description-of-working-environment) during the pre-assessment, the system was used for the high-level assessment as well using the setup, compilers and modules described [there](pre-assessment-report-CPU.md#3-compiler-setup-and-optimisations).
 
 ### Programming model
 
@@ -173,19 +173,20 @@ The inter-node performance is measured using a combination of strong and weak sc
 
 For the initial problem size on one node, `dims_global` was set to `512, 512, 512`. The runs were configured to have 8 MPI ranks per node (1 per NUMA domain) and 16 threads per rank. The total number of ranks used is `num_ranks_per_node x num_nodes`, which is used to set the `nproc_dir` parameter.
 
-| Nodes | Ranks | Threads per rank | Time (s) | Parallel efficiency (%) |
-| ----- | ----- | ---------------- | -------- | ----------------------- |
-| 1     | 8     | 16               | 2781.01  | 1.00                    |
-| 2     | 16    | 16               | 1477.58  | 0.94                    |
-| 3     | 24    | 16               | 1004.73  | 0.92                    |
-| 4     | 32    | 16               | 783.27   | 0.89                    |
-| 5     | 40    | 16               | 606.35   | 0.92                    |
-| 6     | 48    | 16               | 523.3    | 0.89                    |
-| 7     | 56    | 16               | 475.06   | 0.84                    |
+| Nodes | Time (s) | Ranks | Threads per rank | Parallel efficiency (%) |
+| ----- | -------- | ----- | ---------------- | ----------------------- |
+| 1     | 2781.01  | 8     | 16               | 1                       |
+| 2     | 1477.58  | 16    | 16               | 0.94                    |
+| 3     | 1004.73  | 24    | 16               | 0.92                    |
+| 4     | 783.27   | 32    | 16               | 0.89                    |
+| 5     | 606.35   | 40    | 16               | 0.92                    |
+| 6     | 523.3    | 48    | 16               | 0.89                    |
+| 7     | 475.06   | 56    | 16               | 0.84                    |
+| 8     | 409.24   | 64    | 16               | 0.85                    |
 
 <img src='images/internode.png' width=500 alt="Internode performance"/>
 
-For 1 to 7 nodes on Hamilton, the parallel efficiency was never below 60% or 80%. As a result, the problem size did not require any increase for any node count. The metric, $C^{80\%}_{inter}$ was therefore 100%:
+For 1 to 8 nodes on Hamilton, the parallel efficiency was never below 60% or 80%. As a result, the problem size did not require any increase for any node count. The metric, $C^{80\%}_{inter}$ was therefore 100%:
 
 | Efficiency | Description | Score |
 | ---------- | ----------- | ----- |
@@ -197,7 +198,7 @@ As the inter-node performance of the code demonstrated favourable scaling for th
 
 ## GPU Assessment
 
-As of 21/09/2026, the build of the code for GPU deployment was unsuccessful. As a result, the GPU assessment was not performed at this time.
+We are currently working through the pre-assessment of the GPU build and so a GPU assessment is pending.
 
 ## I/O Assessment
 
@@ -225,7 +226,7 @@ $$
 
 | I/O proportion | Description | Score |
 | -------------- | ----------- | ----- |
-| $C_{I/O} \ge$ 0.8 | <span style="background-color: #0080005f">I/O does not require further analysis.</span> | $C_{I/O} \approx 1.00$
+| $C_{I/O} \ge$ 0.8 | <span style="background-color: #0080005f">I/O does not require further analysis.</span> | $C_{I/O} \approx$ 1.00
 | 0.8 $\gt C_{I/O} \ge$ 0.6 | <span style="background-color: #ffff005c">I/O forms a significant part of the total runtime and may require further analysis.</span> |
 | 0.6 $\gt C_{I/O}$ | <span style="background-color: #ff00004e">I/O requires in-depth analysis.</span>
 
