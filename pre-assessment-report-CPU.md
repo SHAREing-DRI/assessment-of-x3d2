@@ -48,7 +48,7 @@ cmake --build build-omp -j
 
 ### Fetch and run benchmark
 
-The benchmark is included in the same git repository as the program. The benchmark file selected is the Taylor-Green 
+The benchmark is included in the same git repository as the program. The benchmark file selected is Taylor-Green. To run the benchmark:
 
 To run the benchmark:
 
@@ -70,6 +70,7 @@ Additionally, the files `decomp_2d_setup.log` and `monitoring.csv` will be gener
 ### Reference architecture
 
 Reference benchmark architecture for the submitted benchmark case:
+
 - CPU: AMD EPYC 7443 24-Core Processor, 1 socket, 24 physical cores, 48 hardware threads
 - NUMA: 4 NUMA domains
 - GPU: NVIDIA A100.
@@ -102,7 +103,6 @@ The hardware details for Hamilton are available [here](https://www.durham.ac.uk/
 
 Additionally, there is a high-memory partition with 2 nodes and a single GPU node in its own partition, which will not be used in this assessment.
 
-
 ### Libraries and modules
 
 In order to build the CPU version on the assessment system, Hamilton8, we need to load the following modules:
@@ -117,6 +117,7 @@ A minimum version of cmake 3.21 is required by 2decomp.
 ### Assessment tools
 
 The following tools are available on Hamilton and intended for use for the high-level assessment:
+
 1. likwid 5.5.1
 2. darshan 3.5.0
 3. GNU time (/usr/bin/time)
@@ -125,11 +126,14 @@ The following tools are available on Hamilton and intended for use for the high-
 
 The submitted code uses the `cmake` build system.
 The configuration invocation
-```
+
+```bash
 cmake -S . -B build-omp -DCMAKE_BUILD_TYPE=Release -DWITH_ADIOS2=ON
 ```
+
 configures the build for release, which adds the following compiler optimisation flags for the CPU build:
-```
+
+```bash
 -O3 -ffast-math -funroll-loops -floop-optimize -march=native
 ```
 
@@ -142,31 +146,39 @@ No compiler or library versions were specified and therefore a set which success
 The main problem-size parameter is dims_global = Nx, Ny, Nz. For cubic cases, increasing N from 256 to 512 increases the number of grid cells by 8x.
 
 The core flow-solver work scales approximately with the number of grid cells times the number of timesteps:
-```
+
+```txt
 Work ~ O(Nx * Ny * Nz * n_iters)
 ```
+
 For FFT-based Poisson solves and global transposes, the cost also includes communication and FFT complexity. For cubic grids this introduces an approximate FFT contribution of:
-```
+
+```txt
 O(N^3 log N)
 ```
+
 plus MPI communication/transposition costs that depend on the domain decomposition and interconnect.
 
 To produce strong scaling:
+
 - keep dims_global fixed
 - increase MPI ranks / OpenMP threads / GPUs
 - adjust nproc_dir so its product matches the MPI rank count
 
 To produce weak scaling:
+
 - increase dims_global as the number of ranks/GPUs increases so that the local grid size per rank/GPU remains approximately constant
 - for example, if doubling resources in one decomposition direction, double the corresponding global grid dimension and update nproc_dir accordingly
 
 For single-node CPU benchmarks on a 24-core AMD EPYC 7443, useful configurations include:
+
 - 24 MPI ranks x 1 thread
 - 12 MPI ranks x 2 threads
 - 8 MPI ranks x 3 threads
 - 4 MPI ranks x 6 threads
 
 For GPU benchmarks, start with:
+
 - 1 MPI rank per GPU
 
 ## 5: Memory, storage and I/O
@@ -176,15 +188,18 @@ A test run of the program indicates that 4.58 GB of RAM was used for a default (
 The benchmark writes to the console output every 100 iterations [as indicated by the submitter](#fetch-and-run-benchmark).
 The benchmark also outputs files totalling 0.02 MB for a run with 3000 iterations.
 These can be disabled by setting
-```
+
+```txt
 n_output = 0
 checkpoint_freq = 0
 snapshot_freq = 0
 keep_checkpoint = F
 restart_from_checkpoint = F
 ```
+
 or enabled for an I/O assessment run with
-```
+
+```txt
 n_output = 10
 checkpoint_freq = 100
 snapshot_freq = 100
@@ -202,6 +217,7 @@ The primary quantity of interest is the timestep loop performance, excluding or 
 x3d2 prints timing information including averaged time per timestep. This is the preferred metric for solver performance because it focuses on the repeated compute phase rather than one-off setup costs.
 
 For most performance comparisons, please report:
+
 - total wall time for the full run
 - averaged time per step
 - number of iterations
