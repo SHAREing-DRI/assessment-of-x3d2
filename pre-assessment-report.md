@@ -23,23 +23,23 @@ Due to compilation errors arising for the GPU configuration with the submitted v
 - [SHAREing: Pre-assessment report of x3d2](#-shareing-pre-assessment-report-of-x3d2)
   - [Disclaimers](#disclaimers)
   - [Table of contents](#table-of-contents)
-  - [2. Benchmark setup](#2-benchmark-setup)
-    - [2.1 Fetch and build program](#21-fetch-and-build-program)
-    - [2.2 Run benchmark](#22-run-benchmark)
-    - [2.3 Reference architecture](#23-reference-architecture)
-  - [3. Description of working environment](#3-description-of-working-environment)
-    - [3.1 Hardware information](#31-hardware-information)
-    - [3.2 Libraries and modules](#32-libraries-and-modules)
-    - [3.3 Assessment tools](#33-assessment-tools)
-  - [4. Compiler setup and optimisations](#4-compiler-setup-and-optimisations)
-  - [5. Computational complexity and scaling](#5-computational-complexity-and-scaling)
-  - [6. Memory, storage and I/O](#6-memory-storage-and-io)
-  - [7. Additional comments from submitter](#7-additional-comments-from-submitter)
-  - [8. Pre-assessment outcome](#8-pre-assessment-outcome)
+  - [1. Benchmark setup](#1-benchmark-setup)
+    - [1.1 Fetch and build program](#11-fetch-and-build-program)
+    - [1.2 Run benchmark](#12-run-benchmark)
+    - [1.3 Reference architecture](#13-reference-architecture)
+  - [2. Description of working environment](#2-description-of-working-environment)
+    - [2.1 Hardware information](#21-hardware-information)
+    - [2.2 Libraries and modules](#22-libraries-and-modules)
+    - [2.3 Assessment tools](#23-assessment-tools)
+  - [3. Compiler setup and optimisations](#3-compiler-setup-and-optimisations)
+  - [4. Computational complexity and scaling](#4-computational-complexity-and-scaling)
+  - [5. Memory, storage and I/O](#5-memory-storage-and-io)
+  - [6. Additional comments from submitter](#6-additional-comments-from-submitter)
+  - [7. Pre-assessment outcome](#7-pre-assessment-outcome)
 
-## 2. Benchmark setup
+## 1. Benchmark setup
 
-### 2.1 Fetch and build program
+### 1.1 Fetch and build program
 
 Code for the CPU configuration is fetched with:
 
@@ -69,7 +69,7 @@ cmake -S . -B build-cuda -DCMAKE_BUILD_TYPE=Release -DCMAKE_Fortran_COMPILER=mpi
 cmake --build build-cuda -j
 ```
 
-### 2.2 Run benchmark
+### 1.2 Run benchmark
 
 This assessment uses the Taylor-Green benchmark which is included in the repository at `examples/TGV/input.x3d`. To run the benchmark with the MPI + OpenMP configuration:
 
@@ -94,7 +94,7 @@ OMP_NUM_THREADS=1 mpirun -np 1 ./build-cuda/bin/xcompact examples/TGV/input.x3d
 
 Additionally, the files `monitoring.csv` and `decomp_2d_setup.log` will be generated in the IO-enabled version.
 
-### 2.3 Reference architecture
+### 1.3 Reference architecture
 
 Reference benchmark architecture for the submitted benchmark case:
 
@@ -102,9 +102,9 @@ Reference benchmark architecture for the submitted benchmark case:
 - NUMA: 4 NUMA domains
 - GPU: NVIDIA A100.
 
-## 3. Description of working environment
+## 2. Description of working environment
 
-### 3.1 Hardware information
+### 2.1 Hardware information
 
 Two different clusters will be used for this assessment.
 The first is the Hamilton system, and the second is Cosma, both based at Durham University.
@@ -144,7 +144,7 @@ For the heterogenous MPI + GPU configuration, the [Grace Hopper GH200 testbed on
 
 The MPI + GPU build is compiled on `gn002` and deployed on `gn003` (referred to as the `gracehopper` partition) for benchmarking and profiling.
 
-### 3.2 Libraries and modules
+### 2.2 Libraries and modules
 
 The submitters did not indicate a preference for the compiler suite for the MPI + OpenMP build. To build this version on the assessment system, Hamilton, we need to load the following modules:
 
@@ -167,7 +167,7 @@ export MODULEPATH=/opt/nvidia/hpc_sdk/modulefiles:$MODULEPATH
 module load nvhpc
 ```
 
-### 3.3 Assessment tools
+### 2.3 Assessment tools
 
 The following tools are available on Hamilton and intended for use for the pre-assessment and high-level:
 
@@ -175,17 +175,17 @@ The following tools are available on Hamilton and intended for use for the pre-a
 2. GNU `time` (`/usr/bin/time`) for runtime and memory usage
 3. NVIDIA Nsight Compute `ncu` for collecting GPU performance metrics
 
-## 4. Compiler setup and optimisations
+## 3. Compiler setup and optimisations
 
-The submitted code uses the `cmake` build system. The invocation for the [MPI + OpenMP build](#21-fetch-and-build-program) configures the build for release, which adds the following compiler optimisation flags:
+The submitted code uses the `cmake` build system. The invocation for the [MPI + OpenMP build](#11-fetch-and-build-program) configures the build for release, which adds the following compiler optimisation flags:
 
 ```bash
 -O3 -ffast-math -funroll-loops -floop-optimize -march=native
 ```
 
-The MPI + OpenMP and the MPI + GPU configurations were built on Hamilton and COSMA's `gn002` testbed successfully with the [modules specified](#32-libraries-and-modules).
+The MPI + OpenMP and the MPI + GPU configurations were built on Hamilton and COSMA's `gn002` testbed successfully with the [modules specified](#22-libraries-and-modules).
 
-## 5. Computational complexity and scaling
+## 4. Computational complexity and scaling
 
 Submitters provided the following details (copied directly from the form):
 
@@ -227,13 +227,11 @@ O(N^3 log N)
 >
 > - 1 MPI rank per GPU
 
-## 6. Memory, storage and I/O
+## 5. Memory, storage and I/O
 
 A test run of the program indicates that 4.58 GB of RAM was used for a default (256x256x256) sized run with 8 ranks decomposed 1, 2, 4 over 3000 iterations.
 
-The benchmark writes to the console output every 100 iterations [as indicated by the submitter](#fetch-and-run-benchmark).
-The benchmark also outputs files totalling 0.02 MB for a run with 3000 iterations.
-These can be disabled by setting
+The benchmark writes to the console output every 100 iterations [as indicated by the submitter](#12-run-benchmark). The benchmark also outputs files totalling 0.02 MB for a run with 3000 iterations. These can be disabled by setting
 
 ```txt
 n_output = 0
@@ -252,7 +250,7 @@ snapshot_freq = 100
 keep_checkpoint = T
 ```
 
-## 7. Additional comments from submitter
+## 6. Additional comments from submitter
 
 Submitters provided the following details (copied directly from the form):
 
@@ -267,6 +265,6 @@ Submitters provided the following details (copied directly from the form):
 > - number of iterations
 > - backend and parallel configuration
 
-## 8. Pre-assessment outcome
+## 7. Pre-assessment outcome
 
 The submitted program is suitable to proceed to a high-level assessment.
