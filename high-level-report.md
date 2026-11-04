@@ -11,11 +11,11 @@ As per the conclusions of the [pre-assessment](pre-assessment-report-CPU.md), th
 
 The submitter has specified that out of the five performance dimensions, the ones relevant to this assessment and benchmark are:
 
-- [x] [Core-level assessment](#core-level-assessment)
-- [x] [Intra-node assessment](#intra-node-assessment)
-- [x] [Inter-node assessment](#inter-node-assessment)
-- [x] [GPU/accelerator assessment](#gpu-assessment)
-- [x] [I/O assessment](#io-assessment)
+- [x] [Core-level assessment](#2-core-level-assessment)
+- [x] [Intra-node assessment](#3-intra-node-assessment)
+- [x] [Inter-node assessment](#4-inter-node-assessment)
+- [x] [GPU/accelerator assessment](#5-gpu-assessment)
+- [x] [I/O assessment](#6-io-assessment)
 
 We provide brief explanations of the high-level metrics in their relevant sections. However, for a more detailed description, please refer to Chapter 5 in the [performance assessment guidebook](https://shareing-dri.github.io/assets/pdfs/perf_analysis_workbook_brief.pdf).
 
@@ -235,23 +235,17 @@ n_output = 10
 The following command was used to obtain the required metrics:
 
 ```bash
-ncu --target-processes all --metrics "regex:sm__sass_thread_inst_executed_op_[A-Za-z]+_pred_on\.sum$" --csv --log-file x3d2_metrics.csv ./build-cuda/bin/xcompact gpu-input.x3d
+ncu --target-processes all --metrics "regex:sm__sass_thread_inst_executed_op_fp\d\d_pred_on.sum$" --csv --log-file x3d2_metrics.csv ./build-cuda/bin/xcompact gpu-input.x3d
 ```
 
-| Metric                                              |       Value | Weight   |   # operations |
-|:----------------------------------------------------|------------:|:---------|---------------:|
-| `sm__sass_thread_inst_executed_op_dadd_pred_on.sum` |  1391994368 | 2.0      |    2.78399e+09 |
-| `sm__sass_thread_inst_executed_op_dfma_pred_on.sum` | 16175594696 | 4.0      |    6.47024e+10 |
-| `sm__sass_thread_inst_executed_op_dmul_pred_on.sum` |  6916239417 | 2.0      |    1.38325e+10 |
-| `sm__sass_thread_inst_executed_op_fadd_pred_on.sum` |           0 | 1.0      |    0           |
-| `sm__sass_thread_inst_executed_op_ffma_pred_on.sum` |    54003200 | 2.0      |    1.08006e+08 |
-| `sm__sass_thread_inst_executed_op_fmul_pred_on.sum` |           0 | 1.0      |    0           |
-| `sm__sass_thread_inst_executed_op_hadd_pred_on.sum` |           0 | 0.5      |    0           |
-| `sm__sass_thread_inst_executed_op_hfma_pred_on.sum` |   139462784 | 1.0      |    1.39463e+08 |
-| `sm__sass_thread_inst_executed_op_hmul_pred_on.sum` |           0 | 0.5      |    0           |
-| Total                                               | 24677294465 | N/A      |    8.15663e+10 |
+| Metric                                              |   # operations |
+|:----------------------------------------------------|---------------:|
+| `sm__sass_thread_inst_executed_op_fp16_pred_on.sum` |      139462784 |
+| `sm__sass_thread_inst_executed_op_fp32_pred_on.sum` |      954130859 |
+| `sm__sass_thread_inst_executed_op_fp64_pred_on.sum` |    24513873492 |
+| Total                                               |    25607467135 |
 
-The total runtime for the configuration without profiling was 1.997426s. For this metric, we used the [double precision (FP64)](https://resources.nvidia.com/en-us-hopper-architecture/nvidia-h100-tensor-c) for comparison. The observed and theoretical floating point rates are:
+The total runtime for the configuration without profiling was 2.027551s. For this metric, we used the [double precision (FP64)](https://resources.nvidia.com/en-us-hopper-architecture/nvidia-h100-tensor-c) as it has the highest number of operations. The observed and theoretical floating point rates are:
 
 | Metric | MFLOPS |
 | ------ | ------ |
