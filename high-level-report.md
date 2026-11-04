@@ -1,29 +1,45 @@
 ---
 License: Copyright © 2026 Durham University, SHAREing Project, MIT Licensed
 Creator: Emily Wilkinson
-Contributors: Emily Wilkinson
+Contributors: Emily Wilkinson, Ananya Gangopadhyay
 Summary: High-level assessment report template
 ---
 
-# High-level performance assessment report of `x3d2`
+# <img src='./images/logo.svg' width=90 style="vertical-align:middle" alt="SHAREing logo"/>SHAREing: High-level performance assessment of x3d2
 
 As per the conclusions of the [pre-assessment](pre-assessment-report-CPU.md), the high-level assessment was performed by Ananya Gangopadhyay between the 1st and 21st of September 2026.
 
 The submitter has specified that out of the five performance dimensions, the ones relevant to this assessment and benchmark are:
 
-- [x] [Core-level assessment](#core-level-assessment)
-- [x] [Intra-node assessment](#intra-node-assessment)
-- [x] [Inter-node assessment](#inter-node-assessment)
-- [ ] [GPU/accelerator assessment](#gpu-assessment) (Pending pre-assessment)
-- [x] [I/O assessment](#io-assessment)
+- [x] [Core-level assessment](#2-core-level-assessment)
+- [x] [Intra-node assessment](#3-intra-node-assessment)
+- [x] [Inter-node assessment](#4-inter-node-assessment)
+- [x] [GPU/accelerator assessment](#5-gpu-assessment)
+- [x] [I/O assessment](#6-io-assessment)
 
 We provide brief explanations of the high-level metrics in their relevant sections. However, for a more detailed description, please refer to Chapter 5 in the [performance assessment guidebook](https://shareing-dri.github.io/assets/pdfs/perf_analysis_workbook_brief.pdf).
 
-## Setup Details
+## Table of contents
+
+- [SHAREing: High-level performance assessment of x3d2](#shareing-high-level-performance-assessment-of-x3d2)
+  - [Table of contents](#table-of-contents)
+  - [1. Setup Details](#1-setup-details)
+    - [1.1 Programming model](#11-programming-model)
+    - [1.2 SLURM configuration](#12-slurm-configuration)
+    - [1.3 Base input](#13-base-input)
+  - [2. Core-level assessment](#2-core-level-assessment)
+  - [3. Intra-node assessment](#3-intra-node-assessment)
+  - [4. Inter-node assessment](#4-inter-node-assessment)
+  - [5. GPU Assessment](#5-gpu-assessment)
+  - [6. I/O Assessment](#6-io-assessment)
+  - [7. Summary](#7-summary)
+  - [8. High-level assessment outcome](#8-high-level-assessment-outcome)
+
+## 1. Setup Details
 
 As the code was [successfully compiled on Hamilton](pre-assessment-report-CPU.md#2-description-of-working-environment) during the pre-assessment, the system was used for the high-level assessment as well using the setup, compilers and modules described [there](pre-assessment-report-CPU.md#3-compiler-setup-and-optimisations).
 
-### Programming model
+### 1.1 Programming model
 
 The compiled code uses a hybrid MPI and OpenMP model for both intra-node and inter-node runs. The submitter indicated several options for configuring the MPI ranks and threads without any indicated preference. We noted that for MPI-only runs, where the number of MPI ranks matches the number of cores, runs with 32 ranks and over ended in segmentation faults:
 
@@ -33,7 +49,7 @@ Caught signal 11 (Segmentation fault: address not mapped to object at address $(
 
 We opted to assign one MPI rank per NUMA domain. With 8 NUMA domains per node, MPI ranks were assigned for every 16 cores. For example, for runs with 32 cores, 2 ranks were assigned, and for 128 cores, 8 ranks were assigned, with 16 threads per rank for both cases.
 
-### SLURM configuration
+### 1.2 SLURM configuration
 
 All analyses were performed on an exclusive node on Hamilton with 64 GB memory regardless of the number of MPI ranks or OpenMP threads used. For runs on 1 node i.e. 128 core, the configuration is set to:
 
@@ -51,13 +67,15 @@ For intra-node runs, the `--ntasks-per-node` and `--cpus-per-task` values are se
 
 MPI ranks are distributed in a `block:block` configuration. The following directives were used for OpenMP thread distribution:
 
+For the GPU build, the configuration used in the same described in the [pre-assessment](pre)
+
 ```bash
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK # Set with --cpus-per-task
 export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 ```
 
-### Base input
+### 1.3 Base input
 
 The following is the input configuration used for serial runs:
 
@@ -99,7 +117,7 @@ For parallel runs, the `nproc_dir` parameter was set to match the number of MPI 
 
 The problem size was varied with the `dims_global` parameter. The submitter has indicated that doubling the size in each direction increases the problem size by 8.
 
-## Core-level assessment
+## 2. Core-level assessment
 
 For a high-level analysis of a single core's performance, we look for the floating-point operation rate compared to the theoretical rate, $R^{core}_{theoretical}$ for a core. The hardware capabilities were determined with `likwid-bench` pinned to a single core on the first socket of a node:
 
@@ -107,7 +125,7 @@ For a high-level analysis of a single core's performance, we look for the floati
 likwid-bench -t peakflops -w S0:16kB:1
 ```
 
-To analyse the performance of a single core, the code was run on one rank and thread with `likwid-perfctr` to get the observed floating point rate, with the [serial input indicated earlier](#base-input):
+To analyse the performance of a single core, the code was run on one rank and thread with `likwid-perfctr` to get the observed floating point rate, with the [serial input indicated earlier](#13-base-input):
 
 ```bash
 likwid-perfctr -f -C 0 -g FLOPS_DP mpirun build-omp/xcompact serial.x3d
@@ -119,7 +137,7 @@ The observed and theoretical floating point rates were
 
 |       Metric              | MFLOPS    |
 | ------------------------- | --------- |
-| $R^{core}_{theoretrical}$ | $8886.43$ |
+| $R^{core}_{theoretical}$ | $8886.43$ |
 | $R^{core}_{observed}$     | $3832.79$ |
 
 Based on these results, we determined that this software has a score of $C^{core} = \frac{R_{observed}}{R_{theoretical}}\approx$ 0.4312. As per the rubric, the metric is classified as follows:
@@ -132,9 +150,9 @@ Based on these results, we determined that this software has a score of $C^{core
 
 The metric shows that the code achieves less than 60% of a single core's achievable peak performance, indicating that this aspect requires deeper analysis.
 
-## Intra-node assessment
+## 3. Intra-node assessment
 
-For a high-level analysis of the intra-node performance, we perform a strong scaling by fixing the problem size and increasing core allocation. For this code, we tested with core counts in powers of 2 from 1 to 128 over a complete node. The `dims_global` remained as indicated in the [base input](#base-input), while the `nproc_dir` was varied when changing the MPI ranks.
+For a high-level analysis of the intra-node performance, we perform a strong scaling by fixing the problem size and increasing core allocation. For this code, we tested with core counts in powers of 2 from 1 to 128 over a complete node. The `dims_global` remained as indicated in the [base input](#13-base-input), while the `nproc_dir` was varied when changing the MPI ranks.
 
 | Cores | Ranks | Thread per rank | Time (s)     | Parallel efficiency (%) |
 | ----- | ----- | --------------- | ------------ | ----------------------- |
@@ -152,22 +170,22 @@ For a high-level analysis of the intra-node performance, we perform a strong sca
 The parallel efficiency shows a steep drop from 1 to 16 cores, levelling around 16 to 18% from 32 to 128 cores. The 80% threshold is at 1 core and the 60% threshold is at 2 cores. As a proportion of the number of cores available on the node i.e. 128, the scores are:
 
 $$
-C^{80\%}_{intra}=\frac{p^{80\%}_{critical,intra}}{p_{max,intra}}=\frac{1}{128}=0.78125\%
+C^{80\\\%}_{intra}=\frac{p^{80\\\%}_{critical,intra}}{p_{max,intra}}=\frac{1}{128}=0.78125\\\%
 $$
 and
 $$
-C^{60\%}_{intra}=\frac{p^{60\%}_{critical,intra}}{p_{max,intra}}=\frac{2}{128}=1.5625\%
+C^{60\\\%}_{intra}=\frac{p^{60\\\%}_{critical,intra}}{p_{max,intra}}=\frac{2}{128}=1.5625\\\%
 $$
 
 | Efficiency                                                 | Description | Score |
 | ---------------------------------------------------------- | ----------- | ----- |
-| $C^{80\%}_{intra} \ge$ 0.8                                 | <span style="background-color: #0080005f">Shared memory scaling does not require further analysis.</span> ||
-| $C^{80\%}_{intra} \lt$ 0.8 ^ $C^{60\%}_{intra} \ge$ 0.6    | <span style="background-color: #ffff005c">Shared memory scaling may require analysis; scaling performance may be impacted when porting to newer chips with more cores.</span> ||
-| otherwise                                                  | <span style="background-color: #ff00004e">Shared memory scaling requires in-depth analysis.</span> |$C^{80\%}_{intra} \approx$ 1.78 $\times$ 10<sup>-3</sup> & $C^{60\%}_{intra} \approx$ 1.56 $\times$ 10<sup>-2</sup>|
+| $C^{80\\\%}_{intra} \ge$ 0.8                                 | <span style="background-color: #0080005f">Shared memory scaling does not require further analysis.</span> ||
+| $C^{80\\\%}_{intra} \lt$ 0.8 ^ $C^{60\\\%}\_{intra} \ge$ 0.6    | <span style="background-color: #ffff005c">Shared memory scaling may require analysis; scaling performance may be impacted when porting to newer chips with more cores.</span> ||
+| otherwise                                                  | <span style="background-color: #ff00004e">Shared memory scaling requires in-depth analysis.</span> |$C^{80\\\%}_{intra} \approx$ 1.78 $\times$ 10<sup>-3</sup> & $C^{60\\\%}\_{intra} \approx$ 1.56 $\times$ 10<sup>-2</sup>|
 
 Based on the classification of the metrics and observations from the parallel efficiency plot, the code demonstrates unfavourable scaling within a node. The intra-node performance therefore requires further investigation.
 
-## Inter-node assessment
+## 4. Inter-node assessment
 
 The inter-node performance is measured using a combination of strong and weak scaling analyses. For a given problem size, a strong scaling analysis is performed over increasing node counts, with the parallel efficiency computed with respect to the performance on a single node. When the efficiency drops below 60%, the problem size is increased relative to the initial size. The run is repeated with the new size for that node count, and the strong scaling analysis is continued over the remaining node counts. The step is repeated every time the efficiency falls below 60%.
 
@@ -186,21 +204,63 @@ For the initial problem size on one node, `dims_global` was set to `512, 512, 51
 
 <img src='images/internode.png' width=500 alt="Internode performance"/>
 
-For 1 to 8 nodes on Hamilton, the parallel efficiency was never below 60% or 80%. As a result, the problem size did not require any increase for any node count. The metric, $C^{80\%}_{inter}$ was therefore 100%:
+For 1 to 8 nodes on Hamilton, the parallel efficiency was never below 60% or 80%. As a result, the problem size did not require any increase for any node count. The metric, $C^{80\\\%}_{inter}$ was therefore 100%:
 
 | Efficiency | Description | Score |
 | ---------- | ----------- | ----- |
-| $C^{80\%}_{inter} \ge$ 0.8 $.C_{inter}$ ^ $C^{80\%}_{inter} + C^{60\%}_{inter}=C_{inter}$ | <span style="background-color: #0080005f">Distributed memory scaling does not require further analysis.</span> | $C^{80\%}_{inter}=$ 1.00 |
-| $C^{60\%}_{intra} \ge$ 0.6 $.C_{inter}$ | <span style="background-color: #ffff005c">Distributed memory scaling may require further analysis.</span> | |
+| $C^{80\\\%}\_{inter} \ge$ 0.8 $.C\_{inter}$ ^ $C^{80\\\%}\_{inter} + C^{60\\\%\}_{inter}=C\_{inter}$ | <span style="background-color: #0080005f">Distributed memory scaling does not require further analysis.</span> | $C^{80\\\%}_{inter}=$ 1.00 |
+| $C^{60\\\%}\_{intra} \ge$ 0.6 $.C\_{inter}$ | <span style="background-color: #ffff005c">Distributed memory scaling may require further analysis.</span> | |
 | otherwise | <span style="background-color: #ff00004e">Distributed memory scaling requires in-depth analysis.</span> | |
 
 As the inter-node performance of the code demonstrated favourable scaling for the configuration analysis, this aspect does not require immediate attention.
 
-## GPU Assessment
+## 5. GPU Assessment
 
-We are currently working through the pre-assessment of the GPU build and so a GPU assessment is pending.
+For a high-level analysis of a single GPU's performance, we look for the floating-point operation rate compared to the theoretical rate, $R^{GPU}_{theoretical}$ for the GPU.
 
-## I/O Assessment
+The theoretical which can be obtained from [its specifications](https://www.nvidia.com/en-sg/data-center/h100/).
+
+To analyse the performance of a single GPU, the code was compiled with the latest version of CUDA and NVHPC available on the GH200 testbeds, specifically.
+
+For this metric, the code was run on a single GPU via SLURM on the `gn003` node of the GH200 testbeds on COSMA and provided with `examples/TGV/input.x3d` as input with `nproc_dir = 1, 1, 1`, the latter changed to adhere to the 1 MPI per GPU requirement. The total runtime for this configuration was 1179.388s.
+
+To obtain the metrics to compute the GPU score, further modifications to the input were made to reduce the profiler's overhead:
+
+```txt
+dims_global = 64, 64, 64
+n_iters = 100
+n_output = 10
+```
+
+The following command was used to obtain the required metrics:
+
+```bash
+ncu --target-processes all --metrics "regex:sm__sass_thread_inst_executed_op_fp\d\d_pred_on.sum$" --csv --log-file x3d2_metrics.csv ./build-cuda/bin/xcompact gpu-input.x3d
+```
+
+| Metric                                              |   # operations |
+|:----------------------------------------------------|---------------:|
+| `sm__sass_thread_inst_executed_op_fp16_pred_on.sum` |      139462784 |
+| `sm__sass_thread_inst_executed_op_fp32_pred_on.sum` |      954130859 |
+| `sm__sass_thread_inst_executed_op_fp64_pred_on.sum` |    24513873492 |
+| Total                                               |    25607467135 |
+
+The total runtime for the configuration without profiling was 2.027551s. For this metric, we used the [double precision (FP64)](https://resources.nvidia.com/en-us-hopper-architecture/nvidia-h100-tensor-c) as it has the highest number of operations. The observed and theoretical floating point rates are:
+
+| Metric | MFLOPS |
+| ------ | ------ |
+| $R^{GPU}_{theoretical}$ | 66,900,000
+| $R^{GPU}_{observed}$ | $\frac{\sum N_{opers}}{T_{exec}}=\frac{8.15663\times10^{10} \times10^{-6}}{2.027551}=$ 40229.0250652 |
+
+ Based on these results, we determined that this software has a score of $C^{GPU} = \frac{R_{observed}}{R_{theoretical}}=\frac{40229.0250652}{67,000,000}\approx$ 6.00 $\times$ 10<sup>-4</sup>. As per the rubric, the metric is classified as follows:
+
+| Peak FLOPS proportion | Description | Score |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| $C_{GPU} \ge$ 0.8 | <span style="background-color: #0080005f">GPU performance does not require further analysis.</span> | |
+| 0.8 $\gt C_{GPU} \ge$ 0.6 | <span style="background-color: #ffff005c">GPU performance may require further analysis as it may not be effectively using the hardware to its maximum potential.</span> | |
+| 0.6 $\gt C_{GPU}$ | <span style="background-color: #ff00004e">GPU performance requires in-depth analysis.</span> | $C_{GPU} \approx$ 6.10 $\times$ 10<sup>-4</sup> |
+
+## 6. I/O Assessment
 
 For the I/O performance, we look for the proportion of the runtime spent processing I/O requests. On Hamilton, the I/O performance was determined with the `darshan` tool. The code was run on 128 cores (1 node) with 8 ranks and 16 threads per rank. To obtain the I/O metrics from `darshan`, the following configurations were used:
 
@@ -232,20 +292,24 @@ $$
 
 The metric indicates that for the given input the I/O has minimal impact on the runtime and so does not need to be addressed.
 
-## Summary
+## 7. Summary
 
 The following table collates the results of all above sections. These scores are indicative only, and cannot truly be compared to one another meaningfully without taking into account domain knowledge and methodological differences between them.
 
 | Result | Score | Metric result |
 | ---------------- | - | - |
-| [Core](#core-level-assessment) | 0.43 | 3832.79 MFLOPS |
-| [Intra-node (80%)](#intra-node-assessment) | 1.78 $\times$ 10<sup>-3</sup> | 1 core |
-| [Inter-node (80%)](#inter-node-assessment) | 1.00 | 7 nodes |
-| [GPU](#gpu-assessment) | - | - |
-| [I/O](#io-assessment) | 1.00 | 2.51 $\times$ 10<sup>-7</sup> |
+| [Core](#2-core-level-assessment) | 0.43 | 3832.79 MFLOPS |
+| [Intra-node (80%)](#3-intra-node-assessment) | 1.78 $\times$ 10<sup>-3</sup> | 1 core |
+| [Inter-node (80%)](#4-inter-node-assessment) | 1.00 | 7 nodes |
+| [GPU](#5-gpu-assessment) | 6.00 $\times$ 10<sup>-4</sup> | 40229.03 MFLOPS |
+| [I/O](#6-io-assessment) | 1.00 | 2.51 $\times$ 10<sup>-7</sup> |
 
 <img src='images/summary.png' width=500 alt="Summary"/>
 
-## High-level assessment outcome
+## 8. High-level assessment outcome
 
-Based on the scores assigned, the [core-level performance](#core-level-assessment) and the [intra-node performance](#intra-node-assessment) may be inhibiting the performance of the code. These aspects are therefore candidates for further investigation in a lower-level analysis. We note that varying the `nproc_dir` parameter, other inputs such as `n_iters` or the assignment of MPI ranks and OpenMP threads may have a meaningful impact on the performance. While their assessment is out-of-scope for the high-level assessment, their analysis should be included in lower-level assessments.
+Based on the scores assigned, the [core-level performance](#2-core-level-assessment) and the [intra-node performance](#3-intra-node-assessment) may be inhibiting the performance of the code. These aspects are therefore candidates for further investigation in a lower-level analysis.
+
+While the GPU performance also indicates that it is an aspect to be considered, the metric and the problem size analysed is hampered by the performance of the profiling tools employed. Therefore, the low score may be a result of the limitations in the assessment methodology rather than code performance.
+
+We also note that varying the `nproc_dir` parameter, other inputs such as `n_iters` or the assignment of MPI ranks and OpenMP threads may have a meaningful impact on the performance. While their assessment is out-of-scope for the high-level assessment, their analysis should be included in lower-level assessments.
