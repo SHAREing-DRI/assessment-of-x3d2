@@ -137,7 +137,7 @@ The observed and theoretical floating point rates were
 
 |       Metric              | MFLOPS    |
 | ------------------------- | --------- |
-| $R^{core}_{theoretrical}$ | $8886.43$ |
+| $R^{core}_{theoretical}$ | $8886.43$ |
 | $R^{core}_{observed}$     | $3832.79$ |
 
 Based on these results, we determined that this software has a score of $C^{core} = \frac{R_{observed}}{R_{theoretical}}\approx$ 0.4312. As per the rubric, the metric is classified as follows:
@@ -152,7 +152,7 @@ The metric shows that the code achieves less than 60% of a single core's achieva
 
 ## 3. Intra-node assessment
 
-For a high-level analysis of the intra-node performance, we perform a strong scaling by fixing the problem size and increasing core allocation. For this code, we tested with core counts in powers of 2 from 1 to 128 over a complete node. The `dims_global` remained as indicated in the [base input](#base-input), while the `nproc_dir` was varied when changing the MPI ranks.
+For a high-level analysis of the intra-node performance, we perform a strong scaling by fixing the problem size and increasing core allocation. For this code, we tested with core counts in powers of 2 from 1 to 128 over a complete node. The `dims_global` remained as indicated in the [base input](#13-base-input), while the `nproc_dir` was varied when changing the MPI ranks.
 
 | Cores | Ranks | Thread per rank | Time (s)     | Parallel efficiency (%) |
 | ----- | ----- | --------------- | ------------ | ----------------------- |
@@ -249,7 +249,7 @@ The total runtime for the configuration without profiling was 2.027551s. For thi
 
 | Metric | MFLOPS |
 | ------ | ------ |
-| $R^{GPU}_{theoretrical}$ | 66,900,000
+| $R^{GPU}_{theoretical}$ | 66,900,000
 | $R^{GPU}_{observed}$ | $\frac{\sum N_{opers}}{T_{exec}}=\frac{8.15663\times10^{10} \times10^{-6}}{2.027551}=$ 40229.0250652 |
 
  Based on these results, we determined that this software has a score of $C^{GPU} = \frac{R_{observed}}{R_{theoretical}}=\frac{40229.0250652}{67,000,000}\approx$ 6.00 $\times$ 10<sup>-4</sup>. As per the rubric, the metric is classified as follows:
